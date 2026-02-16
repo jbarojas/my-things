@@ -1,4 +1,5 @@
 // Importar funciones de Firebase (versión Web Modular)
+console.log("App v5 Loaded - Includes Title Field");
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -20,6 +21,8 @@ const db = getFirestore(app);
 const catInput = document.getElementById('catInput');
 const btnAddCat = document.getElementById('btnAddCat');
 const catSelect = document.getElementById('catSelect');
+
+const titleInput = document.getElementById('titleInput');
 const noteInput = document.getElementById('noteInput');
 const btnSave = document.getElementById('btnSave');
 const logList = document.getElementById('logList');
@@ -136,6 +139,7 @@ const renderLogs = () => {
                 <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">${data.category}</span>
                 <span class="text-xs text-gray-400">${data.date ? data.date.toDate().toLocaleString() : 'Reciente'}</span>
             </div>
+            ${titleHtml}
             ${contentHtml}
             ${linkBtn}
             ${actions}
@@ -152,6 +156,7 @@ const renderLogs = () => {
                 const data = docObj.data();
                 editingId = id;
                 catSelect.value = data.category;
+                titleInput.value = data.title || '';
                 noteInput.value = data.content;
                 btnSave.textContent = "Actualizar Registro";
                 btnSave.classList.remove('bg-blue-600', 'hover:bg-blue-700');
@@ -180,6 +185,7 @@ const renderLogs = () => {
 // 3. Función: Guardar o Actualizar Entrada
 btnSave.addEventListener('click', async () => {
     const category = catSelect.value;
+    const title = titleInput.value.trim();
     const content = noteInput.value.trim();
 
     if (!category || !content) {
@@ -192,6 +198,7 @@ btnSave.addEventListener('click', async () => {
             // Modo Edición
             await updateDoc(doc(db, "logs", editingId), {
                 category: category,
+                title: title,
                 content: content,
                 updatedAt: serverTimestamp() // Opcional: trackear edición
             });
@@ -204,12 +211,14 @@ btnSave.addEventListener('click', async () => {
             // Modo Creación
             await addDoc(collection(db, "logs"), {
                 category: category,
+                title: title,
                 content: content,
                 date: serverTimestamp(),
                 dateStr: new Date().toLocaleDateString()
             });
             alert('Registro guardado');
         }
+        titleInput.value = '';
         noteInput.value = '';
     } catch (e) {
         console.error("Error al guardar/actualizar: ", e);

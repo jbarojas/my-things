@@ -1,6 +1,6 @@
 {
-  "name": "LifeLogger PWA",
-  "short_name": "Logger",
+  "name": "My Things",
+  "short_name": "MyThings",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F3F4F6",

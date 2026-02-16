@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lifelogger-v3';
+const CACHE_NAME = 'lifelogger-v5';
 const ASSETS = [
   '/',
   '/index.html',
@@ -6,8 +6,23 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting(); // Force waiting service worker to become active
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(clients.claim()); // Force active service worker to control clients
+  // Clean up old caches
+  e.waitUntil(
+    caches.keys().then((keyList) => {
+      return Promise.all(keyList.map((key) => {
+        if (key !== CACHE_NAME) {
+          return caches.delete(key);
+        }
+      }));
+    })
   );
 });
 
