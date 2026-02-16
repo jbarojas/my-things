@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,35 +11,51 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
+
 <body class="bg-gray-100 min-h-screen font-sans pb-20">
 
-    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10">
-        <h1 class="text-xl font-bold text-center">My things</h1>
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
+        <h1 class="text-xl font-bold">My things</h1>
+        <button id="btnInstall"
+            class="hidden bg-white text-blue-600 px-3 py-1 rounded text-sm font-bold shadow hover:bg-gray-100">
+            Instalar App
+        </button>
     </header>
 
     <main class="max-w-md mx-auto p-4 space-y-6">
-        
+
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-sm font-semibold text-gray-500 mb-2 uppercase">Nueva Categoría</h2>
             <div class="flex gap-2">
-                <input type="text" id="catInput" placeholder="Ej: Diario, Enlaces..." class="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <input type="text" id="catInput" placeholder="Ej: Diario, Enlaces..."
+                    class="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400">
                 <button id="btnAddCat" class="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700">+</button>
             </div>
         </div>
 
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-sm font-semibold text-gray-500 mb-2 uppercase">Registrar Algo</h2>
-            
+
             <label class="block mb-2 text-sm">Categoría:</label>
             <select id="catSelect" class="w-full border p-2 rounded mb-3 bg-white">
                 <option value="" disabled selected>Selecciona una...</option>
             </select>
 
-            <textarea id="noteInput" rows="3" placeholder="Escribe tu nota o pega el enlace..." class="w-full border p-2 rounded mb-3"></textarea>
-            
-            <button id="btnSave" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 transition transform active:scale-95">
+            <textarea id="noteInput" rows="3" placeholder="Escribe tu nota o pega el enlace..."
+                class="w-full border p-2 rounded mb-3"></textarea>
+
+            <button id="btnSave"
+                class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 transition transform active:scale-95">
                 Guardar Entrada
             </button>
+        </div>
+
+        <div class="flex justify-between items-center px-1">
+            <h2 class="text-sm font-semibold text-gray-500 uppercase">Registros</h2>
+            <select id="filterCat"
+                class="border p-1 rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <option value="all">Todas las categorías</option>
+            </select>
         </div>
 
         <div id="logList" class="space-y-3">
@@ -48,7 +65,7 @@
     </main>
 
     <script type="module" src="./app.js"></script>
-    
+
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
@@ -57,4 +74,5 @@
         }
     </script>
 </body>
+
 </html>
