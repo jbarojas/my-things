@@ -1,5 +1,5 @@
 // Importar funciones de Firebase (versión Web Modular)
-console.log("App v5 Loaded - Includes Title Field");
+console.log("App v7 Loaded - Bug Fixes Applied");
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -115,12 +115,16 @@ const renderLogs = () => {
 
         // Detectar URL (simple regex)
         const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const titleHtml = data.title ? `<h3 class="font-bold text-gray-900 text-lg leading-tight mb-1">${data.title}</h3>` : '';
         let contentHtml = `<p class="text-gray-800 whitespace-pre-wrap">${data.content}</p>`;
 
         // Si hay URL, mostrar botón de ir
         let linkBtn = '';
         const match = data.content.match(urlRegex);
         if (match) {
+            if (data.content.trim() === match[0] || data.content.length < match[0].length + 5) {
+                contentHtml = '';
+            }
             linkBtn = `<a href="${match[0]}" target="_blank" class="block mt-2 text-center bg-blue-50 text-blue-600 border border-blue-200 py-1 rounded text-sm hover:bg-blue-100">
                 🔗 Abrir Enlace
              </a>`;
