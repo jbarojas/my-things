@@ -1,11 +1,16 @@
-const CACHE_NAME = 'lifelogger-v8';
+const CACHE_NAME = 'lifelogger-v12';
 const ASSETS = [
   '/',
   '/index.html',
-  '/app.js',
+  '/home.js',
+  '/editor.html',
+  '/editor.js',
+  '/category.html',
+  '/category.js',
   '/login.html',
   '/login.js',
-  '/firebase-config.js',
+  '/auth-guard.js',
+  '/firebase-config.js?v=12',
   '/manifest.json'
 ];
 

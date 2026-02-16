@@ -1,4 +1,4 @@
-import { auth, provider, signInWithPopup, onAuthStateChanged } from "./firebase-config.js";
+import { auth, provider, signInWithPopup, onAuthStateChanged } from "./firebase-config.js?v=12";
 
 const btnLogin = document.getElementById('btnLogin');
 const errorMsg = document.getElementById('errorMsg');

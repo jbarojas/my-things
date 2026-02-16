@@ -1,6 +1,6 @@
 import { auth, db, signOut, onAuthStateChanged, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, deleteDoc, updateDoc, doc, where } from "./firebase-config.js";
 
-console.log("App v8 Loaded - Authenticated");
+console.log("App v9 Loaded - Multi-Screen");
 
 // UI Config
 const catInput = document.getElementById('catInput');
