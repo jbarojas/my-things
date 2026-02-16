@@ -1,39 +1,43 @@
-// Importar funciones de Firebase (versión Web Modular)
-console.log("App v7 Loaded - Bug Fixes Applied");
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { auth, db, signOut, onAuthStateChanged, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, deleteDoc, updateDoc, doc, where } from "./firebase-config.js";
 
-// --- PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ---
-const firebaseConfig = {
-    apiKey: "AIzaSyDTgg6115ETHggLyPcrKbfpT7qr1gwhuIA",
-    authDomain: "my-things-10a65.firebaseapp.com",
-    projectId: "my-things-10a65",
-    storageBucket: "my-things-10a65.firebasestorage.app",
-    messagingSenderId: "G-0RD1TPRHEL",
-    appId: "1:1067529814794:web:19040e252963543151f0f3"
-};
+console.log("App v8 Loaded - Authenticated");
 
-// Inicializar
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Referencias del DOM
+// UI Config
 const catInput = document.getElementById('catInput');
 const btnAddCat = document.getElementById('btnAddCat');
 const catSelect = document.getElementById('catSelect');
-
 const titleInput = document.getElementById('titleInput');
 const noteInput = document.getElementById('noteInput');
 const btnSave = document.getElementById('btnSave');
 const logList = document.getElementById('logList');
 const filterCat = document.getElementById('filterCat');
 const btnInstall = document.getElementById('btnInstall');
+const btnLogout = document.getElementById('btnLogout');
 
-// Variables de estado
 let editingId = null;
 let deferredPrompt;
+let currentUser = null;
+let unsubLogs = null;
+let unsubCats = null;
 
-// --- PWA INSTALL ---
+// Auth Logic
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        console.log("User logged in:", user.email);
+        initApp();
+    } else {
+        console.log("User not logged in, redirecting...");
+        window.location.href = 'login.html';
+    }
+});
+
+// Logout
+btnLogout.addEventListener('click', async () => {
+    await signOut(auth);
+});
+
+// PWA Install
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -49,50 +53,66 @@ btnInstall.addEventListener('click', async () => {
     btnInstall.classList.add('hidden');
 });
 
-// 1. Función: Crear Categoría
-btnAddCat.addEventListener('click', async () => {
-    const name = catInput.value.trim();
-    if (!name) return;
+// --- App Logic ---
 
-    try {
-        await addDoc(collection(db, "categories"), {
-            name: name,
-            createdAt: serverTimestamp()
+function initApp() {
+    // 1. Categories
+    // For now global categories to keep it simple, or user specific?
+    // Let's make them user specific too for privacy.
+    const qCats = query(collection(db, "categories"), where("uid", "==", currentUser.uid), orderBy("name"));
+
+    unsubCats = onSnapshot(qCats, (snapshot) => {
+        catSelect.innerHTML = '<option value="" disabled selected>Selecciona una...</option>';
+        filterCat.innerHTML = '<option value="all">Todas las categorías</option>';
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const option = document.createElement('option');
+            option.value = data.name;
+            option.textContent = data.name;
+            catSelect.appendChild(option);
+
+            const filterOption = option.cloneNode(true);
+            filterCat.appendChild(filterOption);
         });
-        catInput.value = '';
-        alert('Categoría creada');
-    } catch (e) {
-        console.error("Error al crear categoría: ", e);
-    }
-});
-
-// 2. Función: Cargar Categorías en el Select (Escucha en tiempo real)
-onSnapshot(query(collection(db, "categories"), orderBy("name")), (snapshot) => {
-    catSelect.innerHTML = '<option value="" disabled selected>Selecciona una...</option>';
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        const option = document.createElement('option');
-        option.value = data.name; // Usamos el nombre como ID simple para este ejemplo
-        option.textContent = data.name;
-        catSelect.appendChild(option);
-
-        // Poblar filtro también
-        const filterOption = option.cloneNode(true);
-        filterCat.appendChild(filterOption);
+    }, (error) => {
+        // Index required handling
+        console.error("Error cats:", error);
     });
-});
 
-// Listener para el filtro
-filterCat.addEventListener('change', () => {
-    // Al cambiar el filtro, re-renderizamos. 
-    // Como los datos vienen de onSnapshot, podemos simplemente llamar a una función de render
-    // PERO onSnapshot se dispara solo con cambios en DB.
-    // Hack simple: Forzar recarga o guardar datos en variable global.
-    // Mejor enfoque: Guardar snapshot globalmente y llamar render.
-    renderLogs();
-});
+    // 2. Add Category
+    btnAddCat.addEventListener('click', async () => {
+        const name = catInput.value.trim();
+        if (!name) return;
 
+        try {
+            await addDoc(collection(db, "categories"), {
+                name: name,
+                uid: currentUser.uid,
+                createdAt: serverTimestamp()
+            });
+            catInput.value = '';
+            alert('Categoría creada');
+        } catch (e) {
+            console.error("Error al crear categoría: ", e);
+        }
+    });
+
+    // 3. Logs
+    const qLogs = query(collection(db, "logs"), where("uid", "==", currentUser.uid), orderBy("date", "desc"));
+
+    unsubLogs = onSnapshot(qLogs, (snapshot) => {
+        currentSnapshot = snapshot;
+        renderLogs();
+    }, (error) => {
+        console.error("Error logs:", error);
+        logList.innerHTML = `<p class="text-red-500 text-center">Error cargando datos. Puede que falte un índice compuesto. Abre la consola.</p>`;
+    });
+}
+
+// 4. Render Logs
 let currentSnapshot = [];
+
 const renderLogs = () => {
     logList.innerHTML = '';
     const selectedFilter = filterCat.value;
@@ -106,19 +126,15 @@ const renderLogs = () => {
         const data = docSnap.data();
         const id = docSnap.id;
 
-        // Filtro
         if (selectedFilter !== 'all' && data.category !== selectedFilter) return;
 
-        // Crear tarjeta con Tailwind
         const card = document.createElement('div');
         card.className = "bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-500 flex flex-col gap-2";
 
-        // Detectar URL (simple regex)
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         const titleHtml = data.title ? `<h3 class="font-bold text-gray-900 text-lg leading-tight mb-1">${data.title}</h3>` : '';
         let contentHtml = `<p class="text-gray-800 whitespace-pre-wrap">${data.content}</p>`;
 
-        // Si hay URL, mostrar botón de ir
         let linkBtn = '';
         const match = data.content.match(urlRegex);
         if (match) {
@@ -130,7 +146,6 @@ const renderLogs = () => {
              </a>`;
         }
 
-        // Botones de Acción
         const actions = `
             <div class="flex justify-end gap-2 mt-2 border-t pt-2">
                 <button class="btn-edit text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded hover:bg-gray-200" data-id="${id}">Editar</button>
@@ -151,7 +166,7 @@ const renderLogs = () => {
         logList.appendChild(card);
     });
 
-    // Delegación de eventos (copiada para mantener funcionalidad tras re-render)
+    // Event Listeners (Edit/Delete)
     document.querySelectorAll('.btn-edit').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const id = e.target.getAttribute('data-id');
@@ -165,7 +180,7 @@ const renderLogs = () => {
                 btnSave.textContent = "Actualizar Registro";
                 btnSave.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 btnSave.classList.add('bg-green-600', 'hover:bg-green-700');
-                noteInput.focus();
+                titleInput.focus();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
@@ -185,8 +200,9 @@ const renderLogs = () => {
     });
 };
 
-// 3. Función: Guardar Entrada (Log)
-// 3. Función: Guardar o Actualizar Entrada
+filterCat.addEventListener('change', renderLogs);
+
+// 5. Save/Update Log
 btnSave.addEventListener('click', async () => {
     const category = catSelect.value;
     const title = titleInput.value.trim();
@@ -199,12 +215,11 @@ btnSave.addEventListener('click', async () => {
 
     try {
         if (editingId) {
-            // Modo Edición
             await updateDoc(doc(db, "logs", editingId), {
                 category: category,
                 title: title,
                 content: content,
-                updatedAt: serverTimestamp() // Opcional: trackear edición
+                updatedAt: serverTimestamp()
             });
             editingId = null;
             btnSave.textContent = "Guardar Entrada";
@@ -212,8 +227,8 @@ btnSave.addEventListener('click', async () => {
             btnSave.classList.add('bg-blue-600', 'hover:bg-blue-700');
             alert('Registro actualizado');
         } else {
-            // Modo Creación
             await addDoc(collection(db, "logs"), {
+                uid: currentUser.uid,
                 category: category,
                 title: title,
                 content: content,
@@ -228,11 +243,4 @@ btnSave.addEventListener('click', async () => {
         console.error("Error al guardar/actualizar: ", e);
         alert("Error al guardar: " + e.message);
     }
-});
-
-// 4. Función: Mostrar Registros (Feed en tiempo real)
-const q = query(collection(db, "logs"), orderBy("date", "desc"));
-onSnapshot(q, (snapshot) => {
-    currentSnapshot = snapshot;
-    renderLogs();
 });
