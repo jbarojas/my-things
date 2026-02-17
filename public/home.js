@@ -1,4 +1,4 @@
-import { auth, db, signOut, onAuthStateChanged, collection, query, orderBy, onSnapshot, where } from "./firebase-config.js?v=12";
+import { auth, db, signOut, onAuthStateChanged, collection, query, orderBy, onSnapshot, where } from "./firebase-config.js?v=17";
 
 console.log("Home v1 Loaded");
 
@@ -11,19 +11,43 @@ const btnLogout = document.getElementById('btnLogout');
 let currentUser = null;
 let currentSnapshot = [];
 let deferredPrompt;
-
 // PWA & Logout
+
+// Check if iOS
+const isIos = () => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    return /iphone|ipad|ipod/.test(userAgent);
+}
+
+// 1. Handle Standard Install (Android/Desktop)
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     btnInstall.classList.remove('hidden');
 });
+
+// 2. Handle iOS or Manual Trigger
 btnInstall.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    deferredPrompt = null;
-    btnInstall.classList.add('hidden');
+    if (deferredPrompt) {
+        // Android/Desktop
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response: ${outcome}`);
+        deferredPrompt = null;
+        btnInstall.classList.add('hidden');
+    } else if (isIos()) {
+        // iOS Instructions
+        alert("Para instalar en iOS:\n1. Toca el botón 'Compartir' (cuadrado con flecha).\n2. Selecciona 'Agregar a Inicio'.");
+    } else {
+        // Fallback
+        alert("Para instalar, busca la opción 'Agregar a Inicio' o 'Instalar aplicación' en el menú de tu navegador.");
+    }
 });
+
+// Always show install button on iOS (since event doesn't fire)
+if (isIos()) {
+    btnInstall.classList.remove('hidden');
+}
 btnLogout.addEventListener('click', async () => await signOut(auth));
 
 // Auth & Init

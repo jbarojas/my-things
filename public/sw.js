@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lifelogger-v12';
+const CACHE_NAME = 'lifelogger-v18';
 const ASSETS = [
   '/',
   '/index.html',
@@ -10,8 +10,10 @@ const ASSETS = [
   '/login.html',
   '/login.js',
   '/auth-guard.js',
-  '/firebase-config.js?v=12',
-  '/manifest.json'
+  '/firebase-config.js?v=18',
+  '/manifest.json',
+  '/assets/icon-192.png',
+  '/assets/icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {
